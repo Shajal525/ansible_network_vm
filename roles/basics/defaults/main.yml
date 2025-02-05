@@ -1,0 +1,3 @@
+ssl_local_machine_save_path: "/mnt/c/Users/Shajal/ssl_cert"
+ssl_cert_dir: "{{ ssl_cert_dir }}"
+

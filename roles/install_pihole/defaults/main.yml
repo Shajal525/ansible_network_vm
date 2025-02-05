@@ -1,0 +1,1 @@
+ssl_cert_dir: "{{ ssl_cert_dir }}"

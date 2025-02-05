@@ -1,0 +1,66 @@
+---
+- name: Ensure Docker service is running
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Create WireGuard directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "www-data"
+    group: "www-data"
+    mode: "0755"
+  loop:
+    - "{{ wireguard_base_path }}"
+    - "{{ wireguard_nginx_config }}"
+
+
+
+- name: Generate password hash using wgpw utility
+  command: >
+    docker run --rm ghcr.io/wg-easy/wg-easy wgpw "{{ vm_password }}"
+  register: password_hash_result
+  changed_when: false
+
+- name: Extract the password hash
+  set_fact:
+    password_hash: "{{ password_hash_result.stdout | regex_replace('^PASSWORD_HASH=\\x27|\\x27$', '') | replace('$', '$$') }}"
+
+- name: Password hash
+  debug:
+    var: password_hash
+
+- name: Create docker compose file from template
+  template:
+    src: templates/docker-compose.yml.j2
+    dest: "{{ wireguard_base_path }}/docker-compose.yml"
+  vars:
+    password_hash: "{{ password_hash }}"
+
+- name: Create Nginx config file from template
+  template:
+    src: templates/nginx.conf.j2
+    dest: "{{ wireguard_nginx_config }}/nginx.conf"
+
+- name: Check if Wireguard container is running
+  shell: docker ps -q --filter "name=wg_easy"
+  register: wireguard_running
+  changed_when: false
+
+- name: Deploy Wireguard Docker Compose
+  shell: |
+    docker-compose up -d
+  args:
+    chdir: "{{ wireguard_base_path }}"
+  when: wireguard_running.stdout == ""
+
+- name: Wait 15 seconds
+  pause:
+    seconds: 15
+
+- name: WireGuard deployed
+  debug:
+    msg: "WireGuard is running successfully"
+

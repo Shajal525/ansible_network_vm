@@ -1,0 +1,3 @@
+---
+- include_tasks: install_portainer.yml
+- include_tasks: install_watchtower.yml

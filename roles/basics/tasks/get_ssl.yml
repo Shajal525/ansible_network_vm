@@ -1,0 +1,25 @@
+---
+- name: Ensure SSL certificate directories exist
+  file:
+    path: "{{ ssl_cert_dir }}"
+    state: directory
+    mode: '0755'
+
+
+- name: Fetch ssl files from server to local machine
+  copy:
+    src: "{{ ssl_local_machine_save_path }}/"
+    dest: "{{ ssl_cert_dir }}"
+
+- name: Find all copied files
+  ansible.builtin.find:
+    paths:
+      - "{{ ssl_cert_dir }}"
+    file_type: file
+  register: copied_files
+
+- name: copied files
+  debug:
+    msg: "{{ item.path }}"
+  loop: "{{ copied_files.files }}"
+

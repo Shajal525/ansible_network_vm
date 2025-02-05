@@ -1,0 +1,10 @@
+ssl_cert_dir: "{{ ssl_cert_dir }}"
+vm_ip_address: "{{ vm_ip_address }}"
+
+wireguard_base_path: "{{ base_storage_path }}/wireguard"
+wireguard_nginx_config: "{{ wireguard_base_path }}/nginx"
+wireguard_port: 1111
+public_domain: "{{ public_domain }}"
+vm_password: "{{ vm_password }}"
+
+

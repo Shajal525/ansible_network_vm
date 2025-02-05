@@ -1,10 +1,20 @@
 ---
-- name: Setup after new install
+# - name: Setup Network VM
+#   hosts: networkpve
+#   become: true
+#   # gather_facts: true
+
+#   roles:
+#     - basics
+#     # - install_docker
+    
+- name: Setup Network VM
   hosts: networkpve
   become: true
-  gather_fact: false
+  gather_facts: false
 
-  roles:
-    # - wifi_setup
-    # - remove_repo
-    - basics
+  roles: 
+    # - install_portainer
+    - install_wireguard
+    # - install_pihole
+
