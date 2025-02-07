@@ -16,8 +16,6 @@
     - "{{ wireguard_base_path }}"
     - "{{ wireguard_nginx_config }}"
 
-
-
 - name: Generate password hash using wgpw utility
   command: >
     docker run --rm ghcr.io/wg-easy/wg-easy wgpw "{{ vm_password }}"

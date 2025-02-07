@@ -1,0 +1,78 @@
+---
+- name: Ensure Docker network "{{ external_network_name }}" exists
+  docker_network:
+    name: "{{ external_network_name }}"
+    state: present
+
+- name: Create directories for Headscale
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "www-data"
+    group: "www-data"
+    mode: "0755"
+  loop:
+    - "{{ headscale_base_path }}"
+    - "{{ headscale_config_path }}"
+
+- name: Create Nginx config file from template
+  template:
+    src: templates/config.yml.j2
+    dest: "{{ headscale_config_path }}/config.yml"
+
+- name: Start headscale container
+  docker_container:
+    name: headscale
+    image: headscale/headscale:latest
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    env:
+      TZ: "Europe/London"
+    volumes:
+      - "{{ headscale_config_path }}:/etc/headscale"
+      - "{{ headscale_base_path }}:/var/lib/headscale"
+    entrypoint: 
+      - headscale 
+      - serve
+    networks:
+      - name: "{{ external_network_name }}"
+    labels:
+      com.docker.compose.project: "headscale_stack"
+      com.docker.compose.service: "headscale"
+    restart_policy: unless-stopped
+    state: started
+
+- name: Start headscale-admin container
+  docker_container:
+    name: headscale-admin
+    image: goodieshq/headscale-admin:latest
+    ports:
+      - "{{ headscale_admin_port }}:80"
+    networks:
+      - name: "{{ external_network_name }}"
+    labels:
+      com.docker.compose.project: "headscale_stack"
+      com.docker.compose.service: "headscale-admin"
+    restart_policy: unless-stopped
+    state: started
+
+- name: Start headscale-ui container
+  docker_container:
+    name: headscale-ui
+    image: ghcr.io/gurucomputing/headscale-ui:latest
+    ports:
+      - "{{ headscale_ui_port }}:8080"
+      - "{{ headscale_ui_port2 }}:8443"
+    networks:
+      - name: "{{ external_network_name }}"
+    labels:
+      com.docker.compose.project: "headscale_stack"
+      com.docker.compose.service: "headscale-ui"
+    restart_policy: unless-stopped
+    state: started
+
+- name: Headscale deployed
+  debug:
+    msg: "Headscale is running successfully"
+

@@ -1,0 +1,9 @@
+external_network_name: "traefik_proxy"
+headscale_base_path: "{{ base_storage_path }}/headscale"
+headscale_config_path: "{{ headscale_base_path }}/config"
+headscale_port: "8080"
+headscale_admin_port: "8010"
+headscale_ui_port: "8020"
+headscale_ui_port2: "8030"
+headscale_url: "https://{{ public_domain }}"
+
