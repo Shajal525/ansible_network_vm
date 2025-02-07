@@ -15,8 +15,8 @@
 
   roles: 
     # - install_portainer
-    # - install_wireguard
     # - cloudflare_tunnel
-    - install_headscale
+    - install_wireguard
+    # - install_headscale
     # - install_pihole
 
