@@ -1,1 +1,8 @@
 ssl_cert_dir: "{{ ssl_cert_dir }}"
+ip_address: "{{ vm_ip_address }}"
+pihole_password: "{{ vm_password }}"
+pihole_port: 2020
+pihole_base_path: "{{ base_storage_path }}/pihole"
+pihole_config: "{{ pihole_base_path }}/config"
+pihole_nginx_config: "{{ pihole_config }}/nginx"
+pihole_unbound: "{{ pihole_base_path }}/unbound"

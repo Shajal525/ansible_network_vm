@@ -2,11 +2,11 @@
 # - name: Setup Network VM
 #   hosts: networkpve
 #   become: true
-#   # gather_facts: true
+#   gather_facts: true
 
 #   roles:
 #     - basics
-#     # - install_docker
+#     - install_docker
     
 - name: Setup Network VM
   hosts: networkpve
@@ -15,8 +15,8 @@
 
   roles: 
     # - install_portainer
+    - install_pihole
     # - cloudflare_tunnel
-    - install_wireguard
+    # - install_wireguard
     # - install_headscale
-    # - install_pihole
 

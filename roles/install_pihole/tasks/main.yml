@@ -1,0 +1,112 @@
+---
+- name: Ensure Docker service is running
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Create PiHole directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "www-data"
+    group: "www-data"
+    mode: "0755"
+  loop:
+    - "{{ pihole_base_path }}"
+    - "{{ pihole_config }}"
+    - "{{ pihole_nginx_config }}"
+    - "{{ pihole_unbound }}"
+
+- name: Create Nginx config file from template
+  template:
+    src: templates/nginx.conf.j2
+    dest: "{{ pihole_nginx_config }}/nginx.conf"
+
+- name: Create Unbound config file from template
+  template:
+    src: templates/unbound.conf.j2
+    dest: "{{ pihole_unbound }}/unbound.conf"
+
+- name: Ensure Docker network is present
+  docker_network:
+    name: dns_net
+    driver: bridge
+    ipam_config:
+      - subnet: 172.20.0.0/16
+
+- name: Ensure Unbound container is running
+  docker_container:
+    name: unbound
+    image: mvance/unbound:latest
+    networks:
+      - name: "dns_net"
+        ipv4_address: "172.20.0.8"
+    volumes:
+      - "{{ pihole_unbound }}:/opt/unbound/etc/unbound"
+    ports:
+      - "5053:53/tcp"
+      - "5053:53/udp"
+    healthcheck:
+      test: ["NONE"]
+    labels:
+      com.docker.compose.project: "pihole_stack"
+      com.docker.compose.service: "unbound"
+    restart_policy: unless-stopped
+    state: started
+
+
+- name: Deploy Pi-hole container
+  docker_container:
+    name: pihole
+    image: pihole/pihole:latest
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "80:80/tcp"
+    env:
+      TZ: 'Europe/London'
+      WEBPASSWORD: "{{ pihole_password }}"
+      PIHOLE_DNS_: '172.20.0.8#5053'
+    volumes:
+      - "{{ pihole_base_path }}:/etc/pihole"
+      - "{{ pihole_config }}/etc-dnsmasq.d:/etc/dnsmasq.d"
+    networks:
+      - name: "dns_net"
+        ipv4_address: "172.20.0.7"
+    labels:
+      com.docker.compose.project: "pihole_stack"
+      com.docker.compose.service: "pihole"
+    restart_policy: unless-stopped
+    state: started
+
+
+- name: Start pihole_nginx container
+  docker_container:
+    name: pihole_nginx
+    image: nginx:latest
+    volumes:
+      - "{{ pihole_nginx_config }}/nginx.conf:/etc/nginx/nginx.conf"
+      - "{{ ssl_cert_dir }}/server.crt:/etc/nginx/ssl/server.crt"
+      - "{{ ssl_cert_dir }}/server.key:/etc/nginx/ssl/server.key"
+    ports:
+      - "{{ pihole_port }}:443"
+    networks:
+      - name: "dns_net"
+        ipv4_address: "172.20.0.6"
+    labels:
+      com.docker.compose.project: "pihole_stack"
+      com.docker.compose.service: "pihole_nginx"
+    restart_policy: unless-stopped
+    state: started
+
+- name: Wait for Pi-hole to be ready
+  wait_for:
+    port: "{{ pihole_port }}"
+    timeout: 15
+
+- name: Pi-hole deployed
+  debug:
+    msg: "Pi-hole is running successfully"
+
+
